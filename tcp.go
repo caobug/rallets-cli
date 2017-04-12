@@ -4,14 +4,17 @@ import (
 	"io"
 	"net"
 	"time"
+ 	"log"
 
-	"github.com/shadowsocks/go-shadowsocks2/core"
-	"github.com/shadowsocks/go-shadowsocks2/socks"
+	"rallets-cli/core"
+	"rallets-cli/socks"
 )
 
 // Create a SOCKS server listening on addr and proxy to server.
 func socksLocal(addr, server string, ciph core.StreamConnCipher) {
-	logf("SOCKS proxy %s <-> %s", addr, server)
+	log.Printf("Server connected")
+	log.Printf("SOCKS proxy listening on %s", addr)
+	// logf("SOCKS proxy %s <-> %s", addr, server)
 	tcpLocal(addr, server, ciph, func(c net.Conn) (socks.Addr, error) { return socks.Handshake(c) })
 }
 
@@ -37,7 +40,7 @@ func tcpLocal(addr, server string, ciph core.StreamConnCipher, getAddr func(net.
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("failed to accept: %s", err)
+			logf("failed to accept")
 			continue
 		}
 
@@ -47,13 +50,13 @@ func tcpLocal(addr, server string, ciph core.StreamConnCipher, getAddr func(net.
 
 			tgt, err := getAddr(c)
 			if err != nil {
-				logf("failed to get target address: %v", err)
+				logf("failed to get target address")
 				return
 			}
 
 			rc, err := net.Dial("tcp", server)
 			if err != nil {
-				logf("failed to connect to server %v: %v", server, err)
+				logf("failed to connect to server")
 				return
 			}
 			defer rc.Close()
@@ -61,17 +64,18 @@ func tcpLocal(addr, server string, ciph core.StreamConnCipher, getAddr func(net.
 			rc = ciph.StreamConn(rc)
 
 			if _, err = rc.Write(tgt); err != nil {
-				logf("failed to send target address: %v", err)
+				logf("failed to send target address")
 				return
 			}
 
-			logf("proxy %s <-> %s <-> %s", c.RemoteAddr(), server, tgt)
+			logf("proxy %s", tgt)
+			// logf("proxy %s <-> %s <-> %s", c.RemoteAddr(), server, tgt)
 			_, _, err = relay(rc, c)
 			if err != nil {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					return // ignore i/o timeout
 				}
-				logf("relay error: %v", err)
+				logf("relay error")
 			}
 		}()
 	}

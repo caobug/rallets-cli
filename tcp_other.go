@@ -2,7 +2,7 @@
 
 package main
 
-import "github.com/shadowsocks/go-shadowsocks2/core"
+import "rallets-cli/core"
 
 func redirLocal(addr, server string, ciph core.StreamConnCipher) {
 	logf("TCP redirect not supported")
